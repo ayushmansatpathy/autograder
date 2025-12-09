@@ -20,32 +20,18 @@ async def upload_and_store_doc(request, file: UploadFile = File(...)):
     pc.upsert_vectors(doc_embeddings, request.user_id)
     return {"message": "Rubric uploaded successfully"}
 
-
 @router.post("/upload-text")
-async def upload_text(request):
+async def upload_text(request: EmbedTextRequest):
     extracted_text = request.text
-    doc_embeddings = embed_doc(extracted_text, "text-rubric")
+    doc_embeddings = embed_doc(extracted_text, request.filename)
     pc.upsert_vectors(doc_embeddings, request.user_id)
     return {"message": "Rubric uploaded successfully"}
 
-
 @router.post("/grade-answer")
-async def grade_answer(request):
+async def grade_answer(request: QueryRequest):
     query_response = retrieve_top_vectors(request.user_id, request.question)
     top_vectors = query_response["matches"]
     texts = [vector["metadata"]["text"] for vector in top_vectors]
     context = "\n".join(texts)
     answer = ask_llm(request.question, request.student_response, context)
     return {"response": answer}
-
-
-question = "What are the 3 pillars of Object Oriented Programming?"
-answer = "The 3 pillars are encapsulation, recursion , and threading."
-query_response = retrieve_top_vectors(
-    "12345test", "What are the 3 pillars of Object Oriented Programming?"
-)
-top_vectors = query_response["matches"]
-texts = [vector["metadata"]["text"] for vector in top_vectors]
-context = "\n".join(texts)
-answer = ask_llm(question, answer, context)
-print(answer)
