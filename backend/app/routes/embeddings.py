@@ -24,7 +24,7 @@ async def upload_and_store_doc(request, file: UploadFile = File(...)):
 @router.post("/upload-text")
 async def upload_text(request):
     extracted_text = request.text
-    doc_embeddings = embed_doc(extracted_text, "text-rubric")
+    doc_embeddings = embed_doc(extracted_text, request.filename)
     pc.upsert_vectors(doc_embeddings, request.user_id)
     return {"message": "Rubric uploaded successfully"}
 
