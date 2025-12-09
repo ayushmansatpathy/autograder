@@ -5,6 +5,7 @@ const API_BASE_URL =
 
 export default function Home() {
   const [userId, setUserId] = useState("demo-user");
+  const [rubricFilename, setRubricFilename] = useState("rubric1.txt");
   const [question, setQuestion] = useState(
     "What are the 3 pillars of Object Oriented Programming?"
   );
@@ -39,6 +40,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           user_id: userId,
+          filename: rubricFilename,
           text: rubricText
         })
       });
@@ -120,6 +122,14 @@ export default function Home() {
                 {isUploading ? "Uploading…" : "Embed rubric"}
               </button>
             </div>
+            <label className="field">
+              <span>Rubric filename</span>
+              <input
+                value={rubricFilename}
+                onChange={(e) => setRubricFilename(e.target.value)}
+                placeholder="e.g., rubric1.txt"
+              />
+            </label>
             <textarea
               value={rubricText}
               onChange={(e) => setRubricText(e.target.value)}

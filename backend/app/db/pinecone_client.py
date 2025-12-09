@@ -13,8 +13,12 @@ class PineconeClient:
         """
         Initializes a Pinecone connection and creates the rubric embeddings index if it does not exist.
         """
-        load_dotenv("../../.env")
+        # load_dotenv("../../.env")
+        load_dotenv()
         API_KEY = getenv("PINECONE_API_KEY")
+        if API_KEY is None:
+            print("Failed to load API Key")
+            return
         INDEX_NAME = "rubric-embeddings"
         self._pc = Pinecone(api_key=API_KEY)
 
@@ -84,3 +88,5 @@ class PineconeClient:
             vector_ids (list): A list of vector IDs to be deleted from the namespace.
         """
         self._index.delete(ids=vector_ids, namespace=user_id)
+
+pc = PineconeClient()
