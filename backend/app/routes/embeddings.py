@@ -20,12 +20,14 @@ async def upload_and_store_doc(request, file: UploadFile = File(...)):
     pc.upsert_vectors(doc_embeddings, request.user_id)
     return {"message": "Rubric uploaded successfully"}
 
+
 @router.post("/upload-text")
 async def upload_text(request: EmbedTextRequest):
     extracted_text = request.text
     doc_embeddings = embed_doc(extracted_text, request.filename)
     pc.upsert_vectors(doc_embeddings, request.user_id)
     return {"message": "Rubric uploaded successfully"}
+
 
 @router.post("/grade-answer")
 async def grade_answer(request: QueryRequest):
