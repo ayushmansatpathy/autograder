@@ -40,100 +40,22 @@ Grounding an LLM with course materials enables faster, more consistent, and expl
 
 ---
 
-### 1.3 Functional Requirements (Use Cases)
+## 1.3 System Architecture
 
-1. **Instructor Authentication**  
-   - Description: Instructor logs in using university or Gradescope credentials. A secure access token is stored locally.  
-   - Success Case: Instructor gains access to dashboard.  
-   - Failure Case: Invalid credentials or expired session.
+### Backend Overview (FastAPI + RAG Pipeline)
 
-2. **Course and Assignment Retrieval**  
-   - Description: Instructor selects a course, and the system retrieves all assignments and submissions via Gradescope API.  
-   - Success Case: Assignments load successfully.  
-   - Failure Case: API returns incomplete or failed response.
+The backend powers the complete Retrieval-Augmented Grading workflow. It is responsible for ingesting PDFs, extracting text, splitting documents into meaningful chunks, generating embeddings, storing them in a vector database, retrieving relevant rubric material, and finally grading student answers with an LLM.
 
-3. **Rubric Configuration**  
-   - Description: Instructor defines or imports grading rubrics (criteria, weights, comments).  
-   - Success Case: Rubric validated and stored.  
-   - Failure Case: Formatting or data errors during import.
+The system extracts text from uploaded PDF files using a PDF processing library and converts them into plain text suitable for downstream retrieval. These documents are then broken into overlapping semantic chunks to preserve context and ensure high-quality retrieval. Each chunk is embedded using a sentence transformer model and stored in Pinecone along with metadata such as the source filename, chunk index, and raw text. The embedding and vector storage logic is fully modularized so that document ingestion can be extended to additional formats in the future.
 
-4. **Submission Upload and Preprocessing**  
-   - Description: System fetches each student submission, converts it to text, and uploads to secure storage (AWS S3).  
-   - Success Case: Submissions uploaded successfully.  
-   - Failure Case: Upload fails due to network or permission issues.
+For retrieval, the backend takes an instructor query or a student answer, embeds it, and searches Pinecone to surface the most relevant rubric or reference material. The system supports per-user or per-course namespaces, ensuring clean data boundaries for FERPA compliance and multi-course usage.
 
-5. **Contextual Grading with RAG Pipeline**  
-   - Description: AI model (LangChain + LLaMA + Pinecone) grades each submission using the rubric and relevant course materials.  
-   - Success Case: AI produces contextually relevant score and feedback.  
-   - Failure Case: Model inference fails or produces incomplete output.
+The backend then performs grading using an LLM through a structured prompt template. The prompt enforces rubric alignment, partial credit, conciseness, and consistency. The model is instructed to follow the rubric exactly and avoid hallucination if information is missing. This ensures that grading remains transparent, explainable, and reproducible, while giving instructors confidence in the reliability of the system.
 
-6. **Instructor Review and Adjustment**  
-   - Description: Instructor reviews AI-suggested scores and feedback in the Chrome extension, then modifies or approves them.  
-   - Success Case: Instructor finalizes all grades.  
-   - Failure Case: UI synchronization or save errors.
+### Frontend Overview (Next.js Interface)
 
-7. **Automated Grade Submission**  
-   - Description: Finalized grades and feedback are submitted back to Gradescope via API.  
-   - Success Case: Grades successfully appear on Gradescope.  
-   - Failure Case: API rate limit or timeout errors.
+The frontend provides a simple, intuitive interface for graders and instructors. Its primary purpose is to enable fast, repeatable grading while exposing only the controls that matter: the question, the student’s response, and the rubric.
 
-8. **Analytics and Performance Tracking**  
-   - Description: System logs grading metrics (time, overrides, consistency) and visualizes analytics in a dashboard.  
-   - Success Case: Analytics display accurately.  
-   - Failure Case: Logging or visualization module errors.
+Users can upload reference materials, which the backend automatically processes and stores. The main grading page allows graders to enter the question text, paste the student’s answer, and supply rubric information. When submitted, the frontend sends these inputs to the backend and displays a finalized score along with a concise explanation produced by the LLM. The explanation is grounded in the rubric to ensure traceability and instructional value.
 
----
-
-### 1.4 Non-Functional Requirements
-
-1. **Performance (Speed Under Load)**  
-   - The system should support approximately 500 concurrent graders without lag.  
-   - A “Preview Grade” should appear within 5 seconds, even during peak load.
-
-2. **Security (Protecting Data)**  
-   - All traffic must be encrypted (TLS 1.3).  
-   - Stored files and grades must be encrypted (AES-256).  
-   - Passwords must be securely hashed and never stored in plain text.
-
-3. **Access and Accountability**  
-   - Users sign in through university single sign-on (SSO).  
-   - Roles such as Instructor, TA, and Viewer determine visibility and permissions.  
-   - Every grading action (rubric used, score change, release) is logged for traceability.
-
-4. **Usability and Accessibility**  
-   - Fully compatible with screen readers and keyboard-only navigation.  
-   - The interface should include clear labels, high contrast, and quick grading workflows (under 1 minute per submission).
-
-5. **Reliability and Recovery**  
-   - Uptime must be at least 99.5% during semesters.  
-   - Automatic hourly backups with restoration possible within 4 hours.  
-   - Re-sending grades should not duplicate submissions.
-
----
-
-### 1.5 Challenges and Risks
-
-1. **Model Hallucinations / Misalignment**  
-   - Risk: AI may produce unsupported claims or assign grades inconsistent with the rubric.  
-   - Mitigation: Enforce strict RAG grounding, rubric-first prompts, apply confidence thresholds, and enable human review for flagged cases.
-
-2. **Bias and Fairness**  
-   - Risk: Systematic score discrepancies between sections or due to phrasing variations.  
-   - Mitigation: Use attribute masking, conduct periodic fairness audits, track inter-grader agreement, and refine rubrics accordingly.
-
-3. **Scalability During Deadlines**  
-   - Risk: Grading spikes may overload system capacity near submission deadlines.  
-   - Mitigation: Implement autoscaling workers, batch grading, and pre-warming servers before high-demand periods.
-
-4. **Academic Integrity and Prompt Attacks**  
-   - Risk: Students could insert adversarial content designed to manipulate the model.  
-   - Mitigation: Apply content sanitization, prompt injection detection, and human escalation procedures.
-
-5. **Privacy and Compliance**  
-   - Risk: Mishandling or over-retention of student data could violate FERPA or institutional policy.  
-   - Mitigation: Enforce FERPA-aligned data handling, retention limits, and auditable deletions.
-
-6. **Cost Overruns**  
-   - Risk: Excessive model usage may cause budget overruns.  
-   - Mitigation: Apply token limits, caching, context summarization, budget alerts, and tiered model selection.
-
+Although lightweight by design, the frontend architecture supports future extensions such as batch grading workflows, instructor dashboards, grading analytics, or cross-course administration tools. Its minimal structure keeps the user experience fast and focused while still allowing significant room for platform growth.
