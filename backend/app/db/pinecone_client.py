@@ -2,6 +2,7 @@ from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
 from os import getenv
 from time import sleep
+from pathlib import Path
 
 class PineconeClient:
     """
@@ -14,7 +15,8 @@ class PineconeClient:
         Initializes a Pinecone connection and creates the rubric embeddings index if it does not exist.
         """
         # load_dotenv("../../.env")
-        load_dotenv()
+        # load_dotenv()
+        load_dotenv(dotenv_path=Path(__file__).resolve().parents[3] / ".env")
         API_KEY = getenv("PINECONE_API_KEY")
         if API_KEY is None:
             print("Failed to load API Key")
