@@ -1,5 +1,4 @@
 # An AI-powered autograder
-A RAG-powered autograder for CS520
 
 ## 1. Requirements
 
